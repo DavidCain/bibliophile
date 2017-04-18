@@ -53,11 +53,11 @@ class ShelfReader:
 
 
 class BiblioParser:
-    lib_root = 'https://seattle.bibliocommons.com/'
     """ Use undocumented BiblioCommons APIs to extract book information. """
-    def __init__(self, isbns, branch):
+    def __init__(self, isbns, branch, biblio_subdomain='seattle'):
         self.isbns = isbns
         self.branch = branch
+        self.root = 'https://{}.bibliocommons.com/'.format(biblio_subdomain)
 
     @staticmethod
     def bibliocommons_query(isbns, branch):
@@ -92,12 +92,11 @@ class BiblioParser:
             raise UnstableAPIError("slug format changed!")
         return int(item_id)
 
-    @classmethod
-    def get_call_number(cls, rss_link):
+    def get_call_number(self, rss_link):
         """ Get a book's call number from its link in the catalog. """
 
-        path = 'item/full_record/{}'.format(cls.extract_item_id(rss_link))
-        url = urlparse.urljoin(cls.lib_root, path)
+        path = 'item/full_record/{}'.format(self.extract_item_id(rss_link))
+        url = urlparse.urljoin(self.root, path)
 
         # A JSON endpont that returns HTML. ಠ_ಠ
         html = requests.get(url).json()['html']
@@ -105,18 +104,17 @@ class BiblioParser:
         call_num = soup.find(testid="callnum_branch").find('span', class_='value')
         return call_num.text
 
-    @classmethod
-    def matching_books(cls, query):
+    def matching_books(self, query):
         """ Yield title and call number of all available books. """
         # BiblioCommons only opens up their API to library employees
         # As of 2011, they said it would publicly-available 'soon'... =(
-        rss_search = urlparse.urljoin(cls.lib_root, 'search/rss')
+        rss_search = urlparse.urljoin(self.root, 'search/rss')
         resp = requests.get(rss_search, params={'custom_query': query})
         soup = BeautifulSoup(resp.content, 'xml')
         matches = soup.find('channel').findAll('item')
         for match in matches:
             title = html.unescape(match.title.text)
-            call_num = cls.get_call_number(match.link.text)
+            call_num = self.get_call_number(match.link.text)
             yield (title, call_num)
 
     def __iter__(self):
@@ -128,10 +126,10 @@ class BiblioParser:
                 yield match
 
 
-def find_books(user_id, dev_key, shelf, branch):
+def find_books(user_id, dev_key, shelf, branch, biblio):
     reader = ShelfReader(user_id, dev_key)
     isbns = [book['ISBN'] for book in reader.wanted_books(shelf)]
-    for book in BiblioParser(isbns, branch):
+    for book in BiblioParser(isbns, branch, biblio):
         print(book)
 
 
@@ -155,6 +153,10 @@ if __name__ == '__main__':
         '--shelf', default='to-read',
         help="Name of the shelf containing desired books"
     )
+    parser.add_argument(
+        '--biblio', default='seattle',
+        help="subdomain of bibliocommons.com (seattle, vpl, etc.)"
+    )
 
     args = parser.parse_args()
-    find_books(args.user_id, args.dev_key, args.shelf, args.branch)
+    find_books(args.user_id, args.dev_key, args.shelf, args.branch, args.biblio)

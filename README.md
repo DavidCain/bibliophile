@@ -18,7 +18,9 @@ catalog to see if that interesting new book is on the shelf, I'd much rather
 have a script do the hard work for me.
 
 # Can I use this?
-Absolutely!
+If you live near one of the ~190 public libraries using the BiblioCommons
+system, then this software should work for you. It relies on undocumented
+APIs, so your mileage may vary.
 
 1. Apply for a [Goodreads Developer Key][goodreads-api].
 2. Obtain your Goodreads user id
