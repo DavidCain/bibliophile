@@ -54,7 +54,7 @@ class ShelfReader:
 
 class BiblioParser:
     """ Use undocumented BiblioCommons APIs to extract book information. """
-    def __init__(self, isbns, branch, biblio_subdomain='seattle'):
+    def __init__(self, isbns, branch=None, biblio_subdomain='seattle'):
         self.isbns = isbns
         self.branch = branch
         self.root = 'https://{}.bibliocommons.com/'.format(biblio_subdomain)
@@ -66,7 +66,11 @@ class BiblioParser:
         This query can be used in any Bibliocommons-driven catalog.
         """
         isbn_match = ' OR '.join('identifier:({})'.format(isbn) for isbn in isbns)
-        query = '({}) available:"{}"'.format(isbn_match, branch)
+        if branch:
+            query = '({}) available:"{}"'.format(isbn_match, branch)
+        else:
+            query = isbn_match
+
         if len(query) > 900:
             # Shouldn't happen in practice, since we group queries
             raise ValueError("BiblioCommons queries are limited to 900 chars!")
@@ -146,7 +150,7 @@ if __name__ == '__main__':
         help="Goodreads developer key. See https://www.goodreads.com/api"
     )
     parser.add_argument(
-        '--branch', default='Fremont Branch',
+        '--branch', default=None,
         help="Only show titles available at this branch. e.g. 'Fremont Branch'"
     )
     parser.add_argument(
