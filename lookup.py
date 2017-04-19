@@ -2,6 +2,7 @@
 
 import argparse
 import html
+import os
 
 import requests
 import urllib.parse as urlparse
@@ -143,10 +144,12 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         'user_id', type=int,
+        nargs='?', default=os.environ.get('GOODREADS_USER_ID'),
         help="User's ID on Goodreads"
     )
     parser.add_argument(
         'dev_key',
+        nargs='?', default=os.environ.get('GOODREADS_DEV_KEY'),
         help="Goodreads developer key. See https://www.goodreads.com/api"
     )
     parser.add_argument(
@@ -163,4 +166,8 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
+    if not args.user_id:
+        parser.error("Pass user_id positionally, or set GOODREADS_USER_ID")
+    if not args.dev_key:
+        parser.error("Pass dev_key positionally, or set GOODREADS_DEV_KEY")
     find_books(args.user_id, args.dev_key, args.shelf, args.branch, args.biblio)
