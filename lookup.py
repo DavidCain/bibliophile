@@ -2,6 +2,7 @@
 
 import argparse
 import html
+import csv
 import os
 
 import requests
@@ -131,11 +132,21 @@ class BiblioParser:
                 yield match
 
 
-def find_books(user_id, dev_key, shelf, branch, biblio):
+def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
+    """ Print books to stdout, optionally export to csvname. """
     reader = ShelfReader(user_id, dev_key)
     isbns = [book['ISBN'] for book in reader.wanted_books(shelf)]
-    for book in BiblioParser(isbns, branch, biblio):
-        print(book)
+    writer = None
+    if csvname:
+        csvfile = open(csvname, 'w')
+        writer = csv.writer(csvfile)
+        writer.writerow(["Title", "Call Number"])
+    for title, call_num in BiblioParser(isbns, branch, biblio):
+        print("{} - {}".format(title, call_num))
+        if writer:
+            writer.writerow([title, call_num])
+    if writer:
+        csvfile.close()
 
 
 if __name__ == '__main__':
@@ -164,10 +175,15 @@ if __name__ == '__main__':
         '--biblio', default='seattle',
         help="subdomain of bibliocommons.com (seattle, vpl, etc.)"
     )
+    parser.add_argument(
+        '--csv', default=None,
+        help="Output results to a CSV of this name."
+    )
 
     args = parser.parse_args()
     if not args.user_id:
         parser.error("Pass user_id positionally, or set GOODREADS_USER_ID")
     if not args.dev_key:
         parser.error("Pass dev_key positionally, or set GOODREADS_DEV_KEY")
-    find_books(args.user_id, args.dev_key, args.shelf, args.branch, args.biblio)
+    find_books(args.user_id, args.dev_key, args.shelf, args.branch,
+               args.biblio, args.csv)

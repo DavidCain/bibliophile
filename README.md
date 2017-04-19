@@ -45,6 +45,7 @@ from another Goodreads shelf, etc. Pass `--help` to see all options:
 
 ```
 usage: lookup.py [-h] [--branch BRANCH] [--shelf SHELF] [--biblio BIBLIO]
+                 [--csv CSV]
                  [user_id] [dev_key]
 
 See which books you want to read are available at your local library.
@@ -59,6 +60,7 @@ optional arguments:
                    Branch'
   --shelf SHELF    Name of the shelf containing desired books
   --biblio BIBLIO  subdomain of bibliocommons.com (seattle, vpl, etc.)
+  --csv CSV        Output results to a CSV of this name.
 ```
 
 
