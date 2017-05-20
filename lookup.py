@@ -26,6 +26,7 @@ import csv
 import os
 import sys
 
+import grequests
 import requests
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup
@@ -127,30 +128,41 @@ class BiblioParser:
             raise UnstableAPIError("slug format changed!")
         return int(item_id)
 
-    def get_call_number(self, rss_link):
-        """ Get a book's call number from its link in the catalog. """
+    def async_record(self, title, rss_link):
+        """ Return an asynchronous request for info about the given book.
 
+        The response content will be the "full record," containing information
+        about the given title.
+        """
         path = 'item/full_record/{}'.format(self.extract_item_id(rss_link))
         url = urlparse.urljoin(self.root, path)
 
-        # A JSON endpont that returns HTML. ಠ_ಠ
-        html = requests.get(url).json()['html']
-        soup = BeautifulSoup(html, 'html.parser')
-        call_num = soup.find(testid="callnum_branch").find('span', class_='value')
-        return call_num.text
+        def attach_title(response, **kwargs):
+            """ Store the book title as metadata on the response object. """
+            response._title = title
+            return response
+
+        return grequests.get(url, hooks={'response': attach_title})
 
     def matching_books(self, query):
-        """ Yield title and call number of all available books. """
+        """ Yield an asyncronous request for all books in the catalog. """
         # BiblioCommons only opens up their API to library employees
         # As of 2011, they said it would publicly-available 'soon'... =(
         rss_search = urlparse.urljoin(self.root, 'search/rss')
         resp = requests.get(rss_search, params={'custom_query': query})
         soup = BeautifulSoup(resp.content, 'xml')
         matches = soup.find('channel').findAll('item')
+
         for match in matches:
             title = html.unescape(match.title.text)
-            call_num = self.get_call_number(match.link.text)
-            yield (title, call_num)
+            yield self.async_record(title, match.link.text)
+
+    def get_call_number(self, response):
+        """ Extract a book's call number from its catalog query response. """
+        # Yes, that's a JSON endpont that returns HTML. ಠ_ಠ
+        soup = BeautifulSoup(response.json()['html'], 'html.parser')
+        call_num = soup.find(testid="callnum_branch").find('span', class_='value')
+        return call_num.text
 
     def __iter__(self):
         """ Yield all matching books for the supplied ISBNs & branch. """
@@ -159,11 +171,17 @@ class BiblioParser:
             search += " at {}".format(self.branch)
         logger.info(search)
 
+        all_requests = []
         # Undocumented, but the API appears to only support lookup of 10 books
         for isbn_chunk in grouper(self.isbns, 10):
             query = self.bibliocommons_query(isbn_chunk, self.branch)
-            for match in self.matching_books(query):
-                yield match
+            for request in self.matching_books(query):
+                all_requests.append(request)
+
+        for response in grequests.imap(all_requests):
+            call_num = self.get_call_number(response)
+            response.close()
+            yield (response._title, call_num)
 
 
 def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
