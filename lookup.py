@@ -20,13 +20,22 @@ Author: David Cain
 """
 
 import argparse
+import logging
 import html
 import csv
 import os
+import sys
 
 import requests
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(logging.Formatter('%(message)s'))
+logger.addHandler(ch)
 
 
 def grouper(input_list, chunk_size):
@@ -56,6 +65,7 @@ class ShelfReader:
     def wanted_books(self, shelf):
         """ All books that the user wants to read. """
         # See: https://www.goodreads.com/api/index#reviews.list
+        logger.info("Fetch books on {} for user {}".format(shelf, self.user_id))
         body = self.get('review/list', {
             'v': 2,
             'id': self.user_id,
@@ -144,6 +154,11 @@ class BiblioParser:
 
     def __iter__(self):
         """ Yield all matching books for the supplied ISBNs & branch. """
+        search = "Searching library catalog for books"
+        if self.branch:
+            search += " at {}".format(self.branch)
+        logger.info(search)
+
         # Undocumented, but the API appears to only support lookup of 10 books
         for isbn_chunk in grouper(self.isbns, 10):
             query = self.bibliocommons_query(isbn_chunk, self.branch)
@@ -155,17 +170,19 @@ def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
     """ Print books to stdout, optionally export to csvname. """
     reader = ShelfReader(user_id, dev_key)
     isbns = [book['ISBN'] for book in reader.wanted_books(shelf)]
+    logger.info("{} books found on shelf".format(len(isbns)))
     writer = None
     if csvname:
         csvfile = open(csvname, 'w')
         writer = csv.writer(csvfile)
         writer.writerow(["Title", "Call Number"])
     for title, call_num in BiblioParser(isbns, branch, biblio):
-        print("{} - {}".format(title, call_num))
+        logger.info("  {} - {}".format(title, call_num))
         if writer:
             writer.writerow([title, call_num])
     if writer:
         csvfile.close()
+        logger.info("Available books written to {}".format(csvfile.name))
 
 
 if __name__ == '__main__':
