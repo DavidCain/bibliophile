@@ -20,6 +20,7 @@ Author: David Cain
 """
 
 import argparse
+from collections import namedtuple
 import logging
 import html
 import csv
@@ -49,6 +50,9 @@ class UnstableAPIError(RuntimeError):
     pass
 
 
+Book = namedtuple('Book', ['isbn', 'title', 'author'])
+
+
 class ShelfReader:
     """ Read books from a given user's Goodreads shelves. """
 
@@ -76,28 +80,44 @@ class ShelfReader:
         })
 
         for review in body.find('reviews').findAll('review'):
-            book = {
-                'ISBN': review.isbn.text,
-                'title': review.title.text,
-                'author': review.author.find('name').text
-            }
-            yield book
+            yield Book(
+                isbn=review.isbn.text,  # Can be blank! e.g. in e-Books
+                title=review.title.text,
+                author=review.author.find('name').text
+            )
 
 
 class BiblioParser:
     """ Use undocumented BiblioCommons APIs to extract book information. """
-    def __init__(self, isbns, branch=None, biblio_subdomain='seattle'):
-        self.isbns = isbns
+    def __init__(self, books, branch=None, biblio_subdomain='seattle'):
+        self.books = books
         self.branch = branch
         self.root = 'https://{}.bibliocommons.com/'.format(biblio_subdomain)
 
     @staticmethod
-    def bibliocommons_query(isbns, branch):
-        """ Get query for "any of these ISBNS available at this branch."
+    def single_query(book, print_only=True):
+        """ Get query for one book - Use its ISBN (preferred) or title + author. """
+        conditions = {}
+
+        if book.isbn:
+            conditions['identifier'] = book.isbn
+        else:
+            conditions['contributor'] = book.author
+            conditions['title'] = book.title
+            if print_only:
+                conditions['formatcode'] = 'BK'
+
+        rules = ['{}:({})'.format(name, val) for name, val in conditions.items()]
+        query = ' AND '.join(rules)
+        return '({})'.format(query) if len(rules) > 1 else query
+
+    @classmethod
+    def bibliocommons_query(cls, books, branch):
+        """ Get query for "any of these books available at this branch."
 
         This query can be used in any Bibliocommons-driven catalog.
         """
-        isbn_match = ' OR '.join('identifier:({})'.format(isbn) for isbn in isbns)
+        isbn_match = ' OR '.join(cls.single_query(book) for book in books)
         if branch:
             query = '({}) available:"{}"'.format(isbn_match, branch)
         else:
@@ -150,6 +170,7 @@ class BiblioParser:
         # As of 2011, they said it would publicly-available 'soon'... =(
         rss_search = urlparse.urljoin(self.root, 'search/rss')
         resp = requests.get(rss_search, params={'custom_query': query})
+        logger.debug("Searching books via RSS: '%s'", resp.url)
         soup = BeautifulSoup(resp.content, 'xml')
         matches = soup.find('channel').findAll('item')
 
@@ -165,7 +186,7 @@ class BiblioParser:
         return call_num.text
 
     def __iter__(self):
-        """ Yield all matching books for the supplied ISBNs & branch. """
+        """ Yield all matching books for the supplied books & branch. """
         search = "Searching library catalog for books"
         if self.branch:
             search += " at {}".format(self.branch)
@@ -173,7 +194,7 @@ class BiblioParser:
 
         all_requests = []
         # Undocumented, but the API appears to only support lookup of 10 books
-        for isbn_chunk in grouper(self.isbns, 10):
+        for isbn_chunk in grouper(self.books, 10):
             query = self.bibliocommons_query(isbn_chunk, self.branch)
             for request in self.matching_books(query):
                 all_requests.append(request)
@@ -187,14 +208,14 @@ class BiblioParser:
 def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
     """ Print books to stdout, optionally export to csvname. """
     reader = ShelfReader(user_id, dev_key)
-    isbns = [book['ISBN'] for book in reader.wanted_books(shelf)]
-    logger.info("{} books found on shelf".format(len(isbns)))
+    wanted_books = list(reader.wanted_books(shelf))
+    logger.info("{} books found on shelf".format(len(wanted_books)))
     writer = None
     if csvname:
         csvfile = open(csvname, 'w')
         writer = csv.writer(csvfile)
         writer.writerow(["Title", "Call Number"])
-    for title, call_num in BiblioParser(isbns, branch, biblio):
+    for title, call_num in BiblioParser(wanted_books, branch, biblio):
         logger.info("  {} - {}".format(title, call_num))
         if writer:
             writer.writerow([title, call_num])
