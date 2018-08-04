@@ -169,6 +169,8 @@ class BiblioParser:
         for title, link, call_num in self.catalog_results():
             if call_num:
                 yield title, call_num
+            elif not link:
+                logger.warning("No link given for %s, can't get call #", title)
             else:
                 logger.debug("No call # found for %s, fetching record.", title)
                 full_record_requests.append(self.async_record(title, link))
