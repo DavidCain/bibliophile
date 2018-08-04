@@ -1,0 +1,4 @@
+lxml
+requests
+grequests
+bs4
