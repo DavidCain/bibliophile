@@ -164,14 +164,25 @@ class BiblioParser:
 
         return grequests.get(url, hooks={'response': attach_title})
 
-    def matching_books(self, query):
-        """ Yield an asyncronous request for all books in the catalog. """
+    def async_book_lookup(self, query):
+        """ Formulate & return a request that executes the query.
+
+        The object can be asynchronously queried in a bunch with grequests.
+        """
         # BiblioCommons only opens up their API to library employees
         # As of 2011, they said it would publicly-available 'soon'... =(
         rss_search = urlparse.urljoin(self.root, 'search/rss')
-        resp = requests.get(rss_search, params={'custom_query': query})
-        logger.debug("Searching books via RSS: '%s'", resp.url)
-        soup = BeautifulSoup(resp.content, 'xml')
+        params = {'custom_query': query}
+
+        # grequests doesn't store the (full) url on AsyncRequest objects
+        full_url = f"{rss_search}?{urlparse.urlencode(params)}"
+        logger.debug("Searching books via RSS: '%s'", full_url)
+
+        return grequests.get(rss_search, params=params)
+
+    def matching_books(self, query_response):
+        """ Yield descriptors of all books matched by the query. """
+        soup = BeautifulSoup(query_response.content, 'xml')
         matches = soup.find('channel').findAll('item')
 
         for match in matches:
@@ -181,12 +192,22 @@ class BiblioParser:
             call_num = label.next_element.strip() if label else None
             yield title, match.link.text, call_num
 
-    def get_call_number(self, response):
+    def get_call_number(self, full_record_response):
         """ Extract a book's call number from its catalog query response. """
         # Yes, that's a JSON endpont that returns HTML. ಠ_ಠ
-        soup = BeautifulSoup(response.json()['html'], 'html.parser')
+        soup = BeautifulSoup(full_record_response.json()['html'], 'html.parser')
         call_num = soup.find(testid="callnum_branch").find('span', class_='value')
         return call_num.text
+
+    def catalog_results(self):
+        """ Yield all books found in the catalog, in no particular order. """
+        # Undocumented, but the API appears to only support lookup of 10 books
+        queries = (self.bibliocommons_query(isbn_chunk, self.branch)
+                   for isbn_chunk in grouper(self.books, 10))
+        lookup_requests = [self.async_book_lookup(q) for q in queries]
+        for response in grequests.imap(lookup_requests):
+            for book in self.matching_books(response):
+                yield book
 
     def __iter__(self):
         """ Yield all matching books for the supplied books & branch. """
@@ -195,17 +216,16 @@ class BiblioParser:
             search += " at {}".format(self.branch)
         logger.info(search)
 
-        all_requests = []
-        # Undocumented, but the API appears to only support lookup of 10 books
-        for isbn_chunk in grouper(self.books, 10):
-            query = self.bibliocommons_query(isbn_chunk, self.branch)
-            for title, link, call_num in self.matching_books(query):
-                if call_num:
-                    yield title, call_num
-                else:
-                    all_requests.append(self.async_record(title, link))
+        full_record_requests = []
 
-        for response in grequests.imap(all_requests):
+        for title, link, call_num in self.catalog_results():
+            if call_num:
+                yield title, call_num
+            else:
+                logger.debug(f"No call # found for {title}, fetching record.")
+                full_record_requests.append(self.async_record(title, link))
+
+        for response in grequests.imap(full_record_requests):
             call_num = self.get_call_number(response)
             response.close()
             yield (response._title, call_num)
