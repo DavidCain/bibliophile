@@ -1,0 +1,32 @@
+service: bibliophile
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: dev
+  region: us-west-1
+
+
+package:
+  exclude:
+    - node_modules/**
+    - env/**
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+functions:
+  findBooks:
+    handler: lambda.handler
+    memorySize: 256
+    timeout: 30
+    events:
+      - http:
+          path: findBooks
+          method: post
+    environment:
+      GOODREADS_DEV_KEY: "${env:GOODREADS_DEV_KEY}"
+
+plugins:
+  - serverless-python-requirements
