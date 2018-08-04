@@ -70,7 +70,7 @@ class ShelfReader:
     def wanted_books(self, shelf):
         """ All books that the user wants to read. """
         # See: https://www.goodreads.com/api/index#reviews.list
-        logger.info("Fetch books on {} for user {}".format(shelf, self.user_id))
+        logger.info("Fetch books on %s for user %s", shelf, self.user_id)
         body = self.get('review/list', {
             'v': 2,
             'id': self.user_id,
@@ -92,7 +92,7 @@ class BiblioParser:
     def __init__(self, books, branch=None, biblio_subdomain='seattle'):
         self.books = books
         self.branch = branch
-        self.root = 'https://{}.bibliocommons.com/'.format(biblio_subdomain)
+        self.root = f'https://{biblio_subdomain}.bibliocommons.com/'
 
     @staticmethod
     def single_query(book, print_only=True):
@@ -107,9 +107,9 @@ class BiblioParser:
             if print_only:
                 conditions['formatcode'] = 'BK'
 
-        rules = ['{}:({})'.format(name, val) for name, val in conditions.items()]
+        rules = [f'{name}:({val})' for name, val in conditions.items()]
         query = ' AND '.join(rules)
-        return '({})'.format(query) if len(rules) > 1 else query
+        return f'({query})' if len(rules) > 1 else query
 
     @classmethod
     def bibliocommons_query(cls, books, branch):
@@ -118,10 +118,7 @@ class BiblioParser:
         This query can be used in any Bibliocommons-driven catalog.
         """
         isbn_match = ' OR '.join(cls.single_query(book) for book in books)
-        if branch:
-            query = '({}) available:"{}"'.format(isbn_match, branch)
-        else:
-            query = isbn_match
+        query = f'({isbn_match}) available:"{branch}"' if branch else isbn_match
 
         if len(query) > 900:
             # Shouldn't happen in practice, since we group queries
@@ -213,7 +210,7 @@ class BiblioParser:
         """ Yield all matching books for the supplied books & branch. """
         search = "Searching library catalog for books"
         if self.branch:
-            search += " at {}".format(self.branch)
+            search += f" at {self.branch}"
         logger.info(search)
 
         full_record_requests = []
@@ -222,7 +219,7 @@ class BiblioParser:
             if call_num:
                 yield title, call_num
             else:
-                logger.debug(f"No call # found for {title}, fetching record.")
+                logger.debug("No call # found for %s, fetching record.", title)
                 full_record_requests.append(self.async_record(title, link))
 
         for response in grequests.imap(full_record_requests):
@@ -235,19 +232,19 @@ def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
     """ Print books to stdout, optionally export to csvname. """
     reader = ShelfReader(user_id, dev_key)
     wanted_books = list(reader.wanted_books(shelf))
-    logger.info("{} books found on shelf".format(len(wanted_books)))
+    logger.info("%d books found on shelf", len(wanted_books))
     writer = None
     if csvname:
         csvfile = open(csvname, 'w')
         writer = csv.writer(csvfile)
         writer.writerow(["Title", "Call Number"])
     for title, call_num in BiblioParser(wanted_books, branch, biblio):
-        logger.info("  {} - {}".format(title, call_num))
+        logger.info("  %s - %s", title, call_num)
         if writer:
             writer.writerow([title, call_num])
     if writer:
         csvfile.close()
-        logger.info("Available books written to {}".format(csvfile.name))
+        logger.info("Available books written to %s", csvfile.name)
 
 
 if __name__ == '__main__':
