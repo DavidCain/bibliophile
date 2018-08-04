@@ -176,7 +176,10 @@ class BiblioParser:
 
         for match in matches:
             title = html.unescape(match.title.text)
-            yield self.async_record(title, match.link.text)
+            desc_soup = BeautifulSoup(match.description.text, 'html.parser')
+            label = desc_soup.find(text='Call #:')  # It's a `<b>` tag
+            call_num = label.next_element.strip() if label else None
+            yield title, match.link.text, call_num
 
     def get_call_number(self, response):
         """ Extract a book's call number from its catalog query response. """
@@ -196,8 +199,11 @@ class BiblioParser:
         # Undocumented, but the API appears to only support lookup of 10 books
         for isbn_chunk in grouper(self.books, 10):
             query = self.bibliocommons_query(isbn_chunk, self.branch)
-            for request in self.matching_books(query):
-                all_requests.append(request)
+            for title, link, call_num in self.matching_books(query):
+                if call_num:
+                    yield title, call_num
+                else:
+                    all_requests.append(self.async_record(title, link))
 
         for response in grequests.imap(all_requests):
             call_num = self.get_call_number(response)
