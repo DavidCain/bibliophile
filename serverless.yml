@@ -31,6 +31,7 @@ functions:
       - http:
           path: findBooks
           method: post
+          cors: true
     environment:
       GOODREADS_DEV_KEY: "${env:GOODREADS_DEV_KEY}"
 
