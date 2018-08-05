@@ -15,6 +15,12 @@ package:
 custom:
   pythonRequirements:
     dockerizePip: true
+  customDomain:
+    domainName: 'api.dcain.me'
+    certificateName: 'dcain.me'
+    basePath: ''
+    stage: ${self:provider.stage}
+    createRoute53Record: true
 
 functions:
   findBooks:
@@ -30,3 +36,4 @@ functions:
 
 plugins:
   - serverless-python-requirements
+  - serverless-domain-manager
