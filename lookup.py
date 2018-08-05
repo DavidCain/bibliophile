@@ -44,11 +44,12 @@ def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
     if csvname:
         csvfile = open(csvname, 'w')
         writer = csv.writer(csvfile)
-        writer.writerow(["Title", "Call Number"])
-    for title, call_num in BiblioParser(wanted_books, branch, biblio):
-        logger.info("  %s - %s", title, call_num)
+        writer.writerow(["Title", "Author", "Call Number"])
+    for book in BiblioParser(wanted_books, branch, biblio):
+        logger.info("  %s - %s", book.title, book.call_number)
+        logger.debug("%s", book)
         if writer:
-            writer.writerow([title, call_num])
+            writer.writerow([book.title, book.author, book.call_number])
     if writer:
         csvfile.close()
         logger.info("Available books written to %s", csvfile.name)

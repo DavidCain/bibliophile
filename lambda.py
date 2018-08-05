@@ -52,8 +52,7 @@ def handler(event, context):
         return error("Something went wrong.")
 
     wanted_books = list(reader.wanted_books(shelf))
-    books = [{'title': title, 'call_number': call_num}
-             for title, call_num in BiblioParser(wanted_books, branch, biblio)]
+    books = [bk._asdict() for bk in BiblioParser(wanted_books, branch, biblio)]
 
     return {
         'statusCode': 200,

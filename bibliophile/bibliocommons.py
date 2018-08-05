@@ -17,6 +17,7 @@ Author: David Cain
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from collections import namedtuple
 import logging
 import html
 
@@ -24,8 +25,12 @@ import grequests
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 
+from bibliophile import syndetics
+
 
 logger = logging.getLogger('bibliophile')
+Book = namedtuple('Book', ['title', 'author', 'description', 'call_number',
+                           'cover_image', 'full_record_link'])
 
 
 def grouper(input_list, chunk_size):
@@ -38,13 +43,8 @@ class UnstableAPIError(RuntimeError):
     pass
 
 
-class BiblioParser:
-    """ Use undocumented BiblioCommons APIs to extract book information. """
-    def __init__(self, books, branch=None, biblio_subdomain='seattle'):
-        self.books = books
-        self.branch = branch
-        self.root = f'https://{biblio_subdomain}.bibliocommons.com/'
-
+class QueryBuilder:
+    """ Construct BiblioCommons catalog queries for one or more books. """
     @staticmethod
     def single_query(book, print_only=True):
         """ Get query for one book - Use its ISBN (preferred) or title + author. """
@@ -76,6 +76,14 @@ class BiblioParser:
             raise ValueError("BiblioCommons queries are limited to 900 chars!")
         return query
 
+
+class BiblioParser:
+    """ Use undocumented BiblioCommons APIs to extract book information. """
+    def __init__(self, books, branch=None, biblio_subdomain='seattle'):
+        self.books = books
+        self.branch = branch
+        self.root = f'https://{biblio_subdomain}.bibliocommons.com/'
+
     @staticmethod
     def extract_item_id(rss_link):
         """ Extract a numeric ID from a link to a book summary.
@@ -96,21 +104,21 @@ class BiblioParser:
             raise UnstableAPIError("slug format changed!")
         return int(item_id)
 
-    def async_record(self, title, rss_link):
+    def async_record(self, book):
         """ Return an asynchronous request for info about the given book.
 
         The response content will be the "full record," containing information
         about the given title.
         """
-        path = 'item/full_record/{}'.format(self.extract_item_id(rss_link))
-        url = urlparse.urljoin(self.root, path)
+        item_id = self.extract_item_id(book.full_record_link)
+        url = urlparse.urljoin(self.root, f'item/full_record/{item_id}')
 
-        def attach_title(response, **kwargs):
-            """ Store the book title as metadata on the response object. """
-            response._title = title
+        def attach_book(response, **kwargs):
+            """ Store the book metadata on the response object. """
+            response._book = book
             return response
 
-        return grequests.get(url, hooks={'response': attach_title})
+        return grequests.get(url, hooks={'response': attach_book})
 
     def async_book_lookup(self, query):
         """ Formulate & return a request that executes the query.
@@ -128,17 +136,44 @@ class BiblioParser:
 
         return grequests.get(rss_search, params=params)
 
+    def book_from_rss_item(self, rss_item):
+        """ Parse out book metadata from XML in an RSS <item>. """
+        # The 'description' element contains escaped HTML with <b> labels
+        desc_soup = BeautifulSoup(rss_item.description.text, 'html.parser')
+
+        # Try to get call number directly (some libraries don't have it here)
+        call_num = desc_soup.find('b', text='Call #:')
+        call_number = call_num.next_sibling.strip() if call_num else None
+
+        author_label = desc_soup.find('b', text='Author:')
+        author = author_label.find_next('a').text if author_label else None
+
+        desc_label = desc_soup.find('b', text='Description:')
+        description = desc_label.find_next('p').text if desc_label else ''
+
+        # Get high-quality cover art from the thumbnail that's given for RSS
+        thumbnail = desc_soup.find('div', class_="jacketCoverDiv")
+        if thumbnail:
+            medium_gif = thumbnail.find('img').attrs['src']
+            cover_image = syndetics.higher_quality_cover(image_url=medium_gif)
+        else:
+            cover_image = None
+
+        return Book(
+            full_record_link=rss_item.link.text,  # Can be None!
+            title=html.unescape(rss_item.title.text),
+            author=author,
+            call_number=call_number,
+            description=description,
+            cover_image=cover_image
+        )
+
     def matching_books(self, query_response):
         """ Yield descriptors of all books matched by the query. """
         soup = BeautifulSoup(query_response.content, 'xml')
-        matches = soup.find('channel').findAll('item')
 
-        for match in matches:
-            title = html.unescape(match.title.text)
-            desc_soup = BeautifulSoup(match.description.text, 'html.parser')
-            label = desc_soup.find(text='Call #:')  # It's a `<b>` tag
-            call_num = label.next_element.strip() if label else None
-            yield title, match.link.text, call_num
+        for match in soup.find('channel').findAll('item'):
+            yield self.book_from_rss_item(match)
 
     def get_call_number(self, full_record_response):
         """ Extract a book's call number from its catalog query response. """
@@ -150,7 +185,7 @@ class BiblioParser:
     def catalog_results(self):
         """ Yield all books found in the catalog, in no particular order. """
         # Undocumented, but the API appears to only support lookup of 10 books
-        queries = (self.bibliocommons_query(isbn_chunk, self.branch)
+        queries = (QueryBuilder.bibliocommons_query(isbn_chunk, self.branch)
                    for isbn_chunk in grouper(self.books, 10))
         lookup_requests = [self.async_book_lookup(q) for q in queries]
         for response in grequests.imap(lookup_requests):
@@ -166,16 +201,18 @@ class BiblioParser:
 
         full_record_requests = []
 
-        for title, link, call_num in self.catalog_results():
-            if call_num:
-                yield title, call_num
-            elif not link:
-                logger.warning("No link given for %s, can't get call #", title)
-            else:
-                logger.debug("No call # found for %s, fetching record.", title)
-                full_record_requests.append(self.async_record(title, link))
+        # First, yield all books with full metadata from the RSS channel
+        for book in self.catalog_results():
+            if book.call_number:
+                yield book
+            elif not book.full_record_link:
+                logger.warning("No link given for %s, can't get call #", book.title)
+            else:  # Some metadata found, but we need to more for the call #
+                logger.debug("No call # found for %s, fetching record.", book.title)
+                full_record_requests.append(self.async_record(book))
 
+        # Then yield books that need additional lookups to fetch call numbers
         for response in grequests.imap(full_record_requests):
-            call_num = self.get_call_number(response)
-            response.close()
-            yield (response._title, call_num)
+            book = response._book
+            book.call_number = self.get_call_number(response)
+            yield book
