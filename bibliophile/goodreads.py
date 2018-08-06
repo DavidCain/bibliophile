@@ -19,6 +19,7 @@ Author: David Cain
 
 from collections import namedtuple
 import logging
+import re
 
 import requests
 import urllib.parse as urlparse
@@ -28,7 +29,27 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger('bibliophile')
 
 
-Book = namedtuple('Book', ['isbn', 'title', 'author'])
+Book = namedtuple('Book', ['isbn', 'title', 'author', 'description', 'image_url'])
+
+
+# Expect image urls to conform to a certain scheme
+goodreads_image_regex = re.compile(
+    r'^/books/'
+    r'(?P<slug>\d*)(?P<size>[sml])/'  # size: 'small', 'medium', or 'large'
+    r'(?P<isbn>\d*).jpg$'
+)
+
+
+def higher_quality_cover(image_url):
+    """ Modify a book cover to be higher quality. """
+    parsed = urlparse.urlparse(image_url)
+    match = goodreads_image_regex.match(parsed.path)
+    if not match:
+        logger.warning("Goodreads image format changed! (%s)"
+                       "Returning original quality image.", parsed.path)
+        return image_url
+    larger_path = f"/books/{match.group('slug')}l/{match.group('isbn')}.jpg"
+    return parsed._replace(path=larger_path).geturl()
 
 
 class ShelfReader:
@@ -61,5 +82,7 @@ class ShelfReader:
             yield Book(
                 isbn=review.isbn.text,  # Can be blank! e.g. in e-Books
                 title=review.title.text,
-                author=review.author.find('name').text
+                author=review.author.find('name').text,
+                description=review.description.text,
+                image_url=higher_quality_cover(review.image_url.text)
             )
