@@ -1,0 +1,17 @@
+{
+  "name": "bibliophile-frontend",
+  "description": "See which books you want to read are available at your local library.",
+  "license": "GPL-3.0+",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-scripts": "1.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}

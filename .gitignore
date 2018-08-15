@@ -1,3 +1,7 @@
 /.serverless
 /node_modules
 /env
+
+/react-frontend/node_modules
+/react-frontend/coverage
+/react-frontend/build

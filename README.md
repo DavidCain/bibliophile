@@ -1,25 +1,26 @@
 # Find me something to read!
+[![A list of titles available at my local library][reading-list-img]][biblio]
+
 I wrote this utility to extract the most value from two services I love dearly:
 
 - Goodreads
-- The Seattle Public Library system
+- My local public library
 
 ## How I use it
 Whenever I come across a title I'd like to read some day, I store it on my
-Goodreads shelf. When I'd like to visit my local library branch, I run this
-script, and it will tell me which titles are available to be checked out.
+Goodreads shelf. When I'd like to visit my local library branch, I visit
+[biblio.dcain.me][biblio] to see which titles are available to be checked out.
 
 ## Why?
-I live in a wonderfully tech-oriented city. Our libraries have blazing-fast
-internet access and the entire catalog is accessible via a public API. However,
-my local library branch does not have the most extensive collection. Instead of
+My local library branch does not have the most extensive collection. Instead of
 meandering the stacks until I find a book I like, or fruitlessly querying the
 catalog to see if that interesting new book is on the shelf, I'd much rather
 have a script do the hard work for me.
 
 # Can I use this?
-If you live near one of the ~190 public libraries using the BiblioCommons
-system, then this software should work for you. It relies on undocumented
+The web interface currently supports San Francisco & Seattle, but if you live
+near one of the ~190 public libraries using the BiblioCommons system, then
+running this software locally should work for you. It relies on undocumented
 APIs, so your mileage may vary.
 
 1. Apply for a [Goodreads Developer Key][goodreads-api].
@@ -63,6 +64,19 @@ optional arguments:
   --csv CSV        Output results to a CSV of this name.
 ```
 
+# How does this work?
+- The `bibliophile` Python module does the legwork of querying Goodreads &
+  BiblioCommons (respectively, these are the services needed to find which
+  books I'm interested in, and which books are available at the library).
+- The Python module is deployed as a serverless function on AWS Lambda.
+    - The function is configured with an API Gateway to enable a REST API.
+    - `serverless` provides automated deployment & configuration on AWS.
+- A React application provides the user interface on [biblio.dcain.me][biblio].
+    - The React application is hosted as a static site on S3.
+    - The static site is deployed behind CloudFront (for speed & HTTPS).
 
+
+[reading-list-img]: screenshots/reading_list.png
 [goodreads-api]: https://www.goodreads.com/api
 [goodreads-api-terms]: https://www.goodreads.com/api/terms
+[biblio]: https://biblio.dcain.me

@@ -1,5 +1,5 @@
 """
-Retrieve books on a GoodReads user's "shelf."
+Retrieve books on a Goodreads user's "shelf."
 
 Author: David Cain
 
