@@ -1,0 +1,19 @@
+<div>
+  <ul class="list-unstyled">
+    <li class="media my-4" data-ng-repeat="book in availableBooks">
+      <a data-ng-href="{{ book.full_record_link }}">
+        <img height="200" class="align-self-start mr-3" data-ng-src="{{ book.cover_image }}" data-ng-alt="Cover image for {{ book.title }} by {{ book.author }}" />
+      </a>
+      <div class="media-body">
+        <h3 class="mt-0 mb-1">
+          <span data-ng-bind="book.title"></span>
+          <a data-ng-href="{{ book.full_record_link }}">
+            <span class="badge badge-info float-right" data-ng-bind="book.call_number">Primary</span>
+          </a>
+  			</h3>
+        <h5 class="text-muted" data-ng-bind="book.author"></h5>
+  			<p data-ng-bind="book.description"></p>
+      </div>
+    </li>
+  </ul>
+</div>
