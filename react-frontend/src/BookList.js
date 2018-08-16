@@ -10,7 +10,7 @@ class Book extends Component {
         <a href={ book.full_record_link }>
           <img
             height="200"
-            className="align-self-start mr-3"
+            className="d-none d-md-block align-self-start mr-3"
             src={ book.cover_image }
             alt={`Cover of ${book.title} by ${book.author}`} />
         </a>
@@ -22,7 +22,16 @@ class Book extends Component {
             </a>
           </h3>
           <h5 className="text-muted">{ book.author }</h5>
-          <p>{ book.description }</p>
+          <p>
+            <a href={ book.full_record_link }>
+              <img
+                height="200"
+                className="d-block d-md-none float-left mb-3 mr-3"
+                src={ book.cover_image }
+                alt={`Cover of ${book.title} by ${book.author}`} />
+            </a>
+            { book.description }
+          </p>
         </div>
       </div>
     );
