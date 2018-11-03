@@ -12,8 +12,8 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "serverless": "^1.29.2",
-    "serverless-domain-manager": "^2.6.0",
-    "serverless-python-requirements": "^4.1.1"
+    "serverless": "^1.32.0",
+    "serverless-domain-manager": "^2.6.5",
+    "serverless-python-requirements": "^4.2.5"
   }
 }
