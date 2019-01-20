@@ -70,7 +70,7 @@ if __name__ == '__main__':
         help="Goodreads developer key. See https://www.goodreads.com/api"
     )
     parser.add_argument(
-        '--branch', default=None,
+        '--branch', default='MAIN',
         help="Only show titles available at this branch. e.g. 'Fremont Branch'"
     )
     parser.add_argument(
@@ -78,7 +78,7 @@ if __name__ == '__main__':
         help="Name of the shelf containing desired books"
     )
     parser.add_argument(
-        '--biblio', default='seattle',
+        '--biblio', default='sfpl',
         help="subdomain of bibliocommons.com (seattle, vpl, etc.)"
     )
     parser.add_argument(
