@@ -45,7 +45,7 @@ def higher_quality_cover(image_url):
     parsed = urlparse.urlparse(image_url)
     match = goodreads_image_regex.match(parsed.path)
     if not match:
-        logger.warning("Goodreads image format changed! (%s)"
+        logger.warning("Goodreads image format changed! (%s) "
                        "Returning original quality image.", parsed.path)
         return image_url
     larger_path = f"/books/{match.group('slug')}l/{match.group('isbn')}.jpg"

@@ -17,6 +17,10 @@ def higher_quality_cover(image_url):
     """
     parsed = urlparse.urlparse(image_url)
     params = urlparse.parse_qs(parsed.query)
+    if 'isbn' not in params:
+        # We might receive a placeholder image, use that instead
+        return image_url
+
     isbn, filename = params['isbn'][0].split('/')  # '123456789/SC.GIF'
     params['isbn'] = f"{isbn}/LC.jpg"  # (higher quality image)
     large_cover = parsed._replace(query=urlparse.urlencode(params, doseq=True))
