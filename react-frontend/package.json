@@ -2,6 +2,14 @@
   "name": "bibliophile-frontend",
   "description": "See which books you want to read are available at your local library.",
   "license": "GPL-3.0+",
+  "author": {
+    "name": "David Cain",
+    "email": "davidjosephcain@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DavidCain/bibliophile.git"
+  },
   "dependencies": {
     "axios": "^0.18.0",
     "react": "^16.7.0",
