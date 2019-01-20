@@ -7,3 +7,4 @@ install:
 script:
   - pylint lookup.py
   - pylint bibliophile
+  - python -m unittest
