@@ -62,13 +62,19 @@ class QueryBuilder:
         return f'({query})' if len(rules) > 1 else query
 
     @classmethod
-    def bibliocommons_query(cls, books, branch):
+    def bibliocommons_query(cls, books, branch, isolanguage):
         """ Get query for "any of these books available at this branch."
 
         This query can be used in any Bibliocommons-driven catalog.
         """
         isbn_match = ' OR '.join(cls.single_query(book) for book in books)
-        query = f'({isbn_match}) available:"{branch}"' if branch else isbn_match
+        parts = []
+        if branch:
+            parts.append(f'available:"{branch}"')
+        if isolanguage:
+            parts.append(f'isolanguage:"{isolanguage}"')
+
+        query = f'({isbn_match}) {" ".join(parts)}' if parts else isbn_match
 
         if len(query) > 900:
             # Shouldn't happen in practice, since we group queries
@@ -78,10 +84,11 @@ class QueryBuilder:
 
 class BiblioParser:
     """ Use undocumented BiblioCommons APIs to extract book information. """
-    def __init__(self, books, branch=None, biblio_subdomain='seattle'):
+    def __init__(self, books, branch=None, biblio_subdomain='seattle', isolanguage=None):
         self.books = books
         self.branch = branch
         self.root = f'https://{biblio_subdomain}.bibliocommons.com/'
+        self.isolanguage = isolanguage
 
     @staticmethod
     def extract_item_id(rss_link):
@@ -188,8 +195,10 @@ class BiblioParser:
     def catalog_results(self):
         """ Yield all books found in the catalog, in no particular order. """
         # Undocumented, but the API appears to only support lookup of 10 books
-        queries = (QueryBuilder.bibliocommons_query(isbn_chunk, self.branch)
-                   for isbn_chunk in grouper(self.books, 10))
+        queries = (
+            QueryBuilder.bibliocommons_query(isbn_chunk, self.branch, self.isolanguage)
+            for isbn_chunk in grouper(self.books, 10)
+        )
         lookup_requests = [self.async_book_lookup(q) for q in queries]
         for response in grequests.imap(lookup_requests):
             for book in self.matching_books(response):

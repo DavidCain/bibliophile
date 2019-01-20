@@ -35,7 +35,7 @@ ch.setFormatter(logging.Formatter('%(message)s'))
 logger.addHandler(ch)
 
 
-def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
+def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None, language=None):
     """ Print books to stdout, optionally export to csvname. """
     reader = ShelfReader(user_id, dev_key)
     wanted_books = list(reader.wanted_books(shelf))
@@ -45,7 +45,7 @@ def find_books(user_id, dev_key, shelf, branch, biblio, csvname=None):
         csvfile = open(csvname, 'w')
         writer = csv.writer(csvfile)
         writer.writerow(["Title", "Author", "Call Number"])
-    for book in BiblioParser(wanted_books, branch, biblio):
+    for book in BiblioParser(wanted_books, branch, biblio, language):
         logger.info("  %s - %s", book.title, book.call_number)
         logger.debug("%s", book)
         if writer:
@@ -85,6 +85,10 @@ if __name__ == '__main__':
         '--csv', default=None,
         help="Output results to a CSV of this name."
     )
+    parser.add_argument(
+        '--language', default='eng',
+        help="Restrict results to this language."
+    )
 
     args = parser.parse_args()
     if not args.user_id:
@@ -92,4 +96,4 @@ if __name__ == '__main__':
     if not args.dev_key:
         parser.error("Pass dev_key positionally, or set GOODREADS_DEV_KEY")
     find_books(args.user_id, args.dev_key, args.shelf, args.branch,
-               args.biblio, args.csv)
+               args.biblio, args.csv, args.language)
