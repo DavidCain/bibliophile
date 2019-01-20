@@ -20,9 +20,9 @@ Author: David Cain
 from collections import namedtuple
 import logging
 import html
+import urllib.parse as urlparse
 
 import grequests
-import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 
 from bibliophile import syndetics
@@ -40,7 +40,6 @@ def grouper(input_list, chunk_size):
 
 class UnstableAPIError(RuntimeError):
     """ Indicates a failed assumption about an unstable API. """
-    pass
 
 
 class QueryBuilder:
@@ -113,8 +112,10 @@ class BiblioParser:
         item_id = self.extract_item_id(book.full_record_link)
         url = urlparse.urljoin(self.root, f'item/full_record/{item_id}')
 
+        # pylint:disable=unused-argument
         def attach_book(response, **kwargs):
             """ Store the book metadata on the response object. """
+            # pylint:disable=protected-access
             response._book = book
             return response
 
@@ -136,7 +137,8 @@ class BiblioParser:
 
         return grequests.get(rss_search, params=params)
 
-    def book_from_rss_item(self, rss_item):
+    @staticmethod
+    def book_from_rss_item(rss_item):
         """ Parse out book metadata from XML in an RSS <item>. """
         # The 'description' element contains escaped HTML with <b> labels
         desc_soup = BeautifulSoup(rss_item.description.text, 'html.parser')
@@ -175,7 +177,8 @@ class BiblioParser:
         for match in soup.find('channel').findAll('item'):
             yield self.book_from_rss_item(match)
 
-    def get_call_number(self, full_record_response):
+    @staticmethod
+    def get_call_number(full_record_response):
         """ Extract a book's call number from its catalog query response. """
         # Yes, that's a JSON endpont that returns HTML. ಠ_ಠ
         soup = BeautifulSoup(full_record_response.json()['html'], 'html.parser')
@@ -213,6 +216,7 @@ class BiblioParser:
 
         # Then yield books that need additional lookups to fetch call numbers
         for response in grequests.imap(full_record_requests):
+            # pylint: disable=protected-access
             book = response._book
             book.call_number = self.get_call_number(response)
             yield book

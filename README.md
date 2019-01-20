@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.com/DavidCain/bibliophile.svg?branch=master)](https://travis-ci.com/DavidCain/bibliophile/)
+
 # Find me something to read!
 [![A list of titles available at my local library][reading-list-img]][biblio]
 

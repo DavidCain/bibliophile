@@ -1,0 +1,9 @@
+language: python
+dist: xenial
+python: "3.6"
+install:
+  - pip install -r requirements.txt
+  - pip install pylint
+script:
+  - pylint lookup.py
+  - pylint bibliophile

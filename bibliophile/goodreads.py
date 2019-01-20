@@ -20,9 +20,9 @@ Author: David Cain
 from collections import namedtuple
 import logging
 import re
+import urllib.parse as urlparse
 
 import requests
-import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 
 
@@ -33,7 +33,7 @@ Book = namedtuple('Book', ['isbn', 'title', 'author', 'description', 'image_url'
 
 
 # Expect image urls to conform to a certain scheme
-goodreads_image_regex = re.compile(
+GOODREADS_IMAGE_REGEX = re.compile(
     r'^/books/'
     r'(?P<slug>\d*)(?P<size>[sml])/'  # size: 'small', 'medium', or 'large'
     r'(?P<isbn>\d*).jpg$'
@@ -43,7 +43,7 @@ goodreads_image_regex = re.compile(
 def higher_quality_cover(image_url):
     """ Modify a book cover to be higher quality. """
     parsed = urlparse.urlparse(image_url)
-    match = goodreads_image_regex.match(parsed.path)
+    match = GOODREADS_IMAGE_REGEX.match(parsed.path)
     if not match:
         logger.warning("Goodreads image format changed! (%s) "
                        "Returning original quality image.", parsed.path)
