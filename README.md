@@ -77,7 +77,28 @@ optional arguments:
     - The React application is hosted as a static site on S3.
     - The static site is deployed behind CloudFront (for speed & HTTPS).
 
+## Deployment overview
+This repository contains two projects, which may be deployed separately (or together)
 
+### Python backend (Lambda function)
+1. Create an IAM user for `serverless` with permissions to create
+   CloudFormation stacks, S3 buckets, Lambda functions, and more.
+   Standard practice with `serverless` is to just grant the user an
+   administrator policy, though this is not ideal security.
+2. Create access keys for this user, then run:
+   ```
+   SLS_DEBUG=* ./node_modules/serverless/bin/serverless deploy
+   ```
+
+Configuration for `serverless deploy` is contained in `serverless.yml`.
+If you want to deploy this service to your own domain, you'll need to
+tweak settings in there (namely, changing domain names).
+
+### React frontend (user interface at biblio.dcain.me)
+See [README.md][react-frontend-readme] for more information.
+
+
+[react-frontend-readme]: react-frontend/README.md
 [reading-list-img]: screenshots/reading_list.png
 [goodreads-api]: https://www.goodreads.com/api
 [goodreads-api-terms]: https://www.goodreads.com/api/terms
