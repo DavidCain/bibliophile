@@ -43,6 +43,10 @@ GOODREADS_IMAGE_REGEX = re.compile(
 def higher_quality_cover(image_url):
     """ Modify a book cover to be higher quality. """
     parsed = urlparse.urlparse(image_url)
+    if parsed.path.startswith('/assets/nophoto'):
+        # No known cover for this book! Just return the "no photo" image
+        return image_url
+
     match = GOODREADS_IMAGE_REGEX.match(parsed.path)
     if not match:
         logger.warning("Goodreads image format changed! (%s) "

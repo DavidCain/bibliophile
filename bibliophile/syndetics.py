@@ -17,7 +17,7 @@ def higher_quality_cover(image_url):
     metadata, are left unmodified.
 
     Documentation on the URL scheme can be found in the 'Syndetics Starter Page':
-    https://developers.exlibrisgroup.com/resources/voyager/code_contributions/SyndeticsStarterDocument.pdf
+    https://developers.exlibrisgroup.com/wp-content/uploads/2010/05/SyndeticsStarterDocument.pdf
     """
     parsed = urlparse.urlparse(image_url)
     params = urlparse.parse_qs(parsed.query)
