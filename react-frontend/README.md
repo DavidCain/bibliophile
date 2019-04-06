@@ -6,8 +6,8 @@ querying books available at your local library.
 
 
 # Deployment
-Run `npm run build`, and copy the contents of `build` to an S3 bucket
-configured with static site hosting. That's it!
+Run `INLINE_RUNTIME_CHUNK=false npm run build`, and copy the contents of
+`build` to an S3 bucket configured with static site hosting. That's it!
 
 
 
