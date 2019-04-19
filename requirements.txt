@@ -1,11 +1,11 @@
 beautifulsoup4==4.7.1
-certifi==2018.11.29
+certifi==2019.3.9
 chardet==3.0.4
 gevent==1.4.0
 greenlet==0.4.15
 grequests==0.3.0
 idna==2.8
-lxml==4.3.0
+lxml==4.3.3
 requests==2.21.0
-soupsieve==1.7.2
-urllib3==1.24.1
+soupsieve==1.9.1
+urllib3==1.24.2
