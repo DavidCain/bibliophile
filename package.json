@@ -12,9 +12,13 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "serverless": "^1.36.1",
-    "serverless-domain-manager": "^2.6.12",
-    "serverless-python-requirements": "^4.2.5",
-    "merge": ">=1.2.1"
+    "serverless": "^2.11.1",
+    "serverless-domain-manager": "^5.1.0",
+    "serverless-python-requirements": "^5.1.0",
+    "merge": "^2.1.0"
+  },
+  "scripts": {
+    "serverless": "serverless",
+    "deploy": "SLS_DEBUG=* serverless deploy"
   }
 }

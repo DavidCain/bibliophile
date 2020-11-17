@@ -40,13 +40,18 @@ You can use just the [Python backend][bibliophile-backend] locally.
 This repository contains two projects, which may be deployed separately (or together)
 
 ### Python backend (Lambda function)
-1. Create an IAM user for `serverless` with permissions to create
+1. [Download Docker][docker].
+   We choose to Dockerize the pip environment because both `grequests` and
+   `lxml` (dependencies of `bibliophile`) are C-based, and need to compile
+   binaries for use on the Lambda VM. By using Docker, we can make use of an
+   image that mirrors exactly what AWS will run in Lambda-land.
+2. Create an IAM user for `serverless` with permissions to create
    CloudFormation stacks, S3 buckets, Lambda functions, and more.
    Standard practice with `serverless` is to just grant the user an
    administrator policy, though this is not ideal security.
-2. Create access keys for this user, then run:
+3. Create access keys for this user, then run:
    ```
-   SLS_DEBUG=* ./node_modules/serverless/bin/serverless deploy
+   npm run deploy
    ```
 
 Configuration for `serverless deploy` is contained in `serverless.yml`.
@@ -58,6 +63,7 @@ See [README.md][react-frontend-readme] for more information.
 
 
 [bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend
+[docker]: https://www.docker.com/products/docker-desktop
 [react-frontend-readme]: react-frontend/README.md
 [reading-list-img]: screenshots/reading_list.png
 [biblio]: https://biblio.dcain.me
