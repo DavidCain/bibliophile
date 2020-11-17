@@ -23,49 +23,10 @@ near one of the ~190 public libraries using the BiblioCommons system, then
 running this software locally should work for you. It relies on undocumented
 APIs, so your mileage may vary.
 
-1. Apply for a [Goodreads Developer Key][goodreads-api].
-2. Obtain your Goodreads user id
-3. [Optional] Set both these values in your `.bashrc`
-
-    ```sh
-    export GOODREADS_USER_ID=123456789
-    export GOODREADS_DEV_KEY=whatever-your-actual-key-is
-    ```
-4. Run the script!
-
-    ```sh
-    ./lookup.py --biblio seattle  # Set to your own city!
-    ```
-
-Make sure you adhere to the terms of [Goodreads' API][goodreads-api-terms], and
-have fun.
-
-## Other options
-You can choose to show only titles available at your local branch, select titles
-from another Goodreads shelf, etc. Pass `--help` to see all options:
-
-```
-usage: lookup.py [-h] [--branch BRANCH] [--shelf SHELF] [--biblio BIBLIO]
-                 [--csv CSV]
-                 [user_id] [dev_key]
-
-See which books you want to read are available at your local library.
-
-positional arguments:
-  user_id          User's ID on Goodreads
-  dev_key          Goodreads developer key. See https://www.goodreads.com/api
-
-optional arguments:
-  -h, --help       show this help message and exit
-  --branch BRANCH  Only show titles available at this branch. e.g. 'Fremont
-                   Branch'
-  --shelf SHELF    Name of the shelf containing desired books
-  --biblio BIBLIO  subdomain of bibliocommons.com (seattle, vpl, etc.)
-  --csv CSV        Output results to a CSV of this name.
-```
+You can use just the [Python backend][bibliophile-backend] locally.
 
 # How does this work?
-- The `bibliophile` Python module does the legwork of querying Goodreads &
+- The `bibliophile` Python package does the legwork of querying Goodreads &
   BiblioCommons (respectively, these are the services needed to find which
   books I'm interested in, and which books are available at the library).
 - The Python module is deployed as a serverless function on AWS Lambda.
@@ -96,8 +57,7 @@ tweak settings in there (namely, changing domain names).
 See [README.md][react-frontend-readme] for more information.
 
 
+[bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend
 [react-frontend-readme]: react-frontend/README.md
 [reading-list-img]: screenshots/reading_list.png
-[goodreads-api]: https://www.goodreads.com/api
-[goodreads-api-terms]: https://www.goodreads.com/api/terms
 [biblio]: https://biblio.dcain.me
