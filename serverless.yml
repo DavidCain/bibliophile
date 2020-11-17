@@ -15,7 +15,6 @@ provider:
 
 package:
   exclude:
-    - react-frontend/**
     - node_modules/**
     - env/**
 

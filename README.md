@@ -32,9 +32,7 @@ You can use just the [Python backend][bibliophile-backend] locally.
 - The Python module is deployed as a serverless function on AWS Lambda.
     - The function is configured with an API Gateway to enable a REST API.
     - `serverless` provides automated deployment & configuration on AWS.
-- A React application provides the user interface on [biblio.dcain.me][biblio].
-    - The React application is hosted as a static site on S3.
-    - The static site is deployed behind CloudFront (for speed & HTTPS).
+- A web app provides the user interface on [biblio.dcain.me][biblio].
 
 ## Deployment overview
 This repository contains two projects, which may be deployed separately (or together)
@@ -58,12 +56,8 @@ Configuration for `serverless deploy` is contained in `serverless.yml`.
 If you want to deploy this service to your own domain, you'll need to
 tweak settings in there (namely, changing domain names).
 
-### React frontend (user interface at biblio.dcain.me)
-See [README.md][react-frontend-readme] for more information.
-
 
 [bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend
 [docker]: https://www.docker.com/products/docker-desktop
-[react-frontend-readme]: react-frontend/README.md
 [reading-list-img]: screenshots/reading_list.png
 [biblio]: https://biblio.dcain.me
