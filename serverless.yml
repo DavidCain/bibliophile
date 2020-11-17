@@ -7,6 +7,10 @@ provider:
   runtime: python3.6
   stage: dev
   region: us-west-1
+  # Opt in to version 3 behavior eagerly
+  # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
+  apiGateway:
+    shouldStartNameWithService: true
 
 
 package:
