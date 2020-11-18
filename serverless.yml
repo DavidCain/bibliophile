@@ -57,6 +57,17 @@ functions:
           cors: true
     environment:
       GOODREADS_DEV_KEY: "${env:GOODREADS_DEV_KEY}"
+  searchCatalog:
+    handler: lambda_functions.search_catalog.handler
+    memorySize: 256
+    timeout: 30
+    events:
+      - http:
+          path: search_catalog
+          method: post
+          # We call this method on api.dcain.me from biblio.dcain.me
+          # We need to allow cross-origin requests for POSTs.
+          cors: true
 
 plugins:
   # This plugin allows us to include Python dependencies in the lambda function
