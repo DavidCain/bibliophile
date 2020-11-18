@@ -122,8 +122,8 @@ class HandlerTest(unittest.TestCase):
                 },
                 'body': (
                     '{"books": ['
-                    '{"goodreads_id": "135479", "isbn": "0140285601", "title": "Cat\'s Cradle", "author": "Kurt Vonnegut Jr.", "description": "and the silver spoon...", "image_url": "https://i.gr-assets.com/foo.jpg"}, '
-                    '{"goodreads_id": "3836", "isbn": "0142437239", "title": "Don Quixote", "author": "Miguel de Cervantes", "description": "Windmills, Sancho Panza, etc.", "image_url": "not relevant, so not a real URL"}'
+                    '{"goodreads_id": "135479", "isbn": "0140285601", "title": "Cat\'s Cradle", "author": "Kurt Vonnegut Jr."}, '
+                    '{"goodreads_id": "3836", "isbn": "0142437239", "title": "Don Quixote", "author": "Miguel de Cervantes"}'
                     ']}'
                 ),
             },

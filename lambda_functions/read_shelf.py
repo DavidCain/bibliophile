@@ -67,5 +67,20 @@ def handler(
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Credentials': True,
         },
-        'body': json.dumps({'books': [bk._asdict() for bk in wanted_books]}),
+        'body': json.dumps(
+            {
+                'books': [
+                    {
+                        'goodreads_id': book.goodreads_id,
+                        'isbn': book.isbn,
+                        'title': book.title,
+                        'author': book.author,
+                        # We also read the description + an image URL from Goodreads
+                        # However, we avoid reporting that information since the description
+                        # may come from Goodreads themselves, and we never hotlink images.
+                    }
+                    for book in wanted_books
+                ]
+            }
+        ),
     }
