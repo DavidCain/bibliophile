@@ -37,7 +37,7 @@ You can use just the [Python backend][bibliophile-backend] locally.
 ## Deployment overview
 This repository contains two projects, which may be deployed separately (or together)
 
-### Python backend (Lambda function)
+### Lambda functions (Python-powered backend)
 1. [Download Docker][docker].
    We choose to Dockerize the pip environment because both `grequests` and
    `lxml` (dependencies of `bibliophile`) are C-based, and need to compile
@@ -47,7 +47,13 @@ This repository contains two projects, which may be deployed separately (or toge
    CloudFormation stacks, S3 buckets, Lambda functions, and more.
    Standard practice with `serverless` is to just grant the user an
    administrator policy, though this is not ideal security.
-3. Create access keys for this user, then run:
+3. Create access keys for the `serverless` user
+4. (one-time) create the `customDomain` that the API will be served on:
+   ```
+   npm run serverless create_domain
+   ```
+   (Note that new domains may take up to 40 minutes to initialize)
+5. Deploy the latest version of the endpoint:
    ```
    npm run deploy
    ```
@@ -55,6 +61,14 @@ This repository contains two projects, which may be deployed separately (or toge
 Configuration for `serverless deploy` is contained in `serverless.yml`.
 If you want to deploy this service to your own domain, you'll need to
 tweak settings in there (namely, changing domain names).
+
+Once the above is done, a simple end-to-end test:
+
+```
+curl -X POST 'https://api.dcain.me/bibliophile/read_shelf' \
+    --header "Content-Type: application/json" \
+    --data '{"userId": "41926065", "shelf": "to-read"}'
+```
 
 
 [bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend

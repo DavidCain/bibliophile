@@ -27,11 +27,18 @@ package:
 
 custom:
   pythonRequirements:
+    # When deploying the image for the lambda function, use a Docker container.
+    # This is required because certain dependencies (`xml` & `grequests`) are C-based.
+    # We must compile some binaries and cannot simply publish Python source
     dockerizePip: true
+    # Instead of looking at `requirements.txt`, generate that file using `poetry export`
     usePoetry: true
+
   customDomain:
     domainName: 'api.dcain.me'
     certificateName: 'dcain.me'
+    # All functions deployed to the domain name will be prefixed with this path.
+    # (For example, we'll have a function at https://api.dcain.me/bibliophile/read_shelf)
     basePath: 'bibliophile'
     stage: ${self:provider.stage}
     createRoute53Record: true
@@ -45,10 +52,17 @@ functions:
       - http:
           path: read_shelf
           method: post
+          # We call this method on api.dcain.me from biblio.dcain.me
+          # We need to allow cross-origin requests for POSTs.
           cors: true
     environment:
       GOODREADS_DEV_KEY: "${env:GOODREADS_DEV_KEY}"
 
 plugins:
+  # This plugin allows us to include Python dependencies in the lambda function
+  # See `pythonRequirements`
   - serverless-python-requirements
+  # This allows us to put the lambda functions behind a publicly accessible domain
+  # (We can invoke `api.dcain.me/<RouteName>` directly)
+  # See `customDomain`
   - serverless-domain-manager
