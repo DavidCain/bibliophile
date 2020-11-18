@@ -1,0 +1,59 @@
+[tool.black]
+include = '\.py$'
+# Don't attempt to normalize strings
+# (Preserves the convention of "single quotes for data, double quotes for humans")
+skip-string-normalization = true
+# Tell Black that this code is specifically meant for 3.6 instead of using per-file detection.
+# (without this, Black will only apply certain stylistic changes in the presence of 3.6+ syntax)
+# For example, f-strings prove that code requires 3.6 and Black will format differently.
+target_version = ["py36"]
+
+[tool.coverage.run]
+branch = true
+source = ["lambda_functions"]
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+  # Black handles all formatting
+  'format',
+]
+
+[tool.pylint.REPORTS]
+reports = false
+score = false
+
+[tool.poetry]
+name = "bibliophile_lambda"
+version = "0.1.0"
+description = "AWS lambda functions to find books at the library"
+license = "GPL-3.0"
+readme = "README.md"
+homepage = "https://biblo.dcain.me"
+repository = "https://github.com/DavidCain/bibliophile/"
+authors = ["David Cain <davidjosephcain@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+aws-lambda-context = "*"
+bibliophile = "^1.0.0"  # This is the backend package
+
+[tool.poetry.dev-dependencies]
+black = { version = "*", allow-prereleases = true }
+codecov = "*"
+coverage = "*"
+isort = ">= 5.0.0"  # Version 5 includes Black compatibility
+mypy = "*"
+pylint = "*"
+pytest = "*"
+
+# This section is required for the usePoetry setting in serverless' pythonRequirements
+[build-system]
+# NB: Before Poetry 1.1.1, `poetry export` would incorrectly include platform requirements.
+# Error message: "markers 'platform_python_implementation == "CPython" and sys_platform == "win32"' don't match your environment"
+# Command which serverless uses to generate a `requirements.txt`:
+# `poetry export --without-hashes -f requirements.txt -o requirements.txt --with-credentials`
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"

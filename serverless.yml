@@ -28,6 +28,7 @@ package:
 custom:
   pythonRequirements:
     dockerizePip: true
+    usePoetry: true
   customDomain:
     domainName: 'api.dcain.me'
     certificateName: 'dcain.me'

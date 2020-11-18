@@ -1,4 +1,0 @@
-# This file will be read by serverless' `pythonRequirements` directive.
-# It installs the bibliophile package (https://pypi.org/project/bibliophile/),
-# including its dependencies into the Lambda virtualenv.
-bibliophile

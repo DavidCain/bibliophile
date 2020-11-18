@@ -1,2 +1,5 @@
+/.poetry_dev_up_to_date
+/.poetry_prod_up_to_date
 /.serverless
+/.coverage
 /node_modules
