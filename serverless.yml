@@ -15,8 +15,15 @@ provider:
 
 package:
   exclude:
-    - node_modules/**
-    - env/**
+    # Exclude everything by default
+    # We only want to release a few modules, *not* the frontend, dev config, etc.
+    - "./**"
+  include:
+    # Include just the functions themselves, *not* tests
+    - "lambda_functions/*py"
+    # Package the license & readme for good measure
+    - "LICENSE.md"
+    - "README.md"
 
 custom:
   pythonRequirements:
@@ -24,18 +31,18 @@ custom:
   customDomain:
     domainName: 'api.dcain.me'
     certificateName: 'dcain.me'
-    basePath: ''
+    basePath: 'bibliophile'
     stage: ${self:provider.stage}
     createRoute53Record: true
 
 functions:
-  findBooks:
-    handler: lambda.handler
+  readShelf:
+    handler: lambda_functions.read_shelf.handler
     memorySize: 256
     timeout: 30
     events:
       - http:
-          path: findBooks
+          path: read_shelf
           method: post
           cors: true
     environment:
