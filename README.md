@@ -72,6 +72,46 @@ If you want to deploy this service to your own domain, you'll need to
 tweak settings in there (namely, changing domain names).
 
 
+# TODO
+This is a pet project I work on whenever I'm so inclined.
+
+Accordingly, there are a lot of TODOs at any given moment...
+
+## Cache shelf contents
+The Goodreads API can be quite slow. They allow caching results for up to 24 hours,
+so we can use that to make the initial shelf reading faster for repeat users.
+
+## Support shelves with over 200 books
+Right now, this tool only reads the first 200 books on the `to-read` shelf
+(the Goodreads API prevents reading more). To support larger shelves, we should
+call the API endpoint a few times (while not breaking the "1 query per second" rule
+Goodreads has on API integrations.
+
+## Batch catalog queries
+After we've fetched the Goodreads shelf, we could make catalog queries, say, 20 books at a time.
+The backend already parallelizes execution of large searches, but this would allow us to have
+more iterative results which appear on-screen as data is available.
+
+## Search for similar ISBNs
+Currently, the search algorithm prefers an exact match on ISBN. This results in fewer
+results than you'd expect, since popular titles are generally released with several ISBNs
+(for example, paperback and hardcover editions get different ISBNs).
+
+### Why not a search by author & title?
+For famous authors/works, the number of incorrect results are just too numerous.
+Even when limiting to books (to exclude all the matching DVDs and audio recordings),
+other results appear alongside the "real" result.
+
+### Prefer first ISBN, but allow others
+An excellent way around this problem is to utilize Goodreads "other editions" feature:
+
+1. For each book, see if there's an exact match in the catalog. If so? Great, we're done.
+2. If there's no match, check for other editions' ISBNs. If no other editions, exit.
+3. Search by title & author, and accept any results which have a known ISBN.
+
+An endpoint exists to do this (`work.editions`), though it requires special permission.
+I'm waiting to hear back from Goodreads staff.
+
 
 [bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend
 [bibliophile-frontend]: https://github.com/DavidCain/bibliophile-frontend
