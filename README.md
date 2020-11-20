@@ -18,26 +18,26 @@ catalog to see if that interesting new book is on the shelf, I'd much rather
 have a script do the hard work for me.
 
 # Can I use this?
-The web interface currently supports San Francisco & Seattle, but if you live
-near one of the ~190 public libraries using the BiblioCommons system, then
-running this software locally should work for you. It relies on undocumented
-APIs, so your mileage may vary.
+The [web interface][biblio] currently supports Alameda County, San Francisco,
+and Seattle, but if you live near one of the ~190 public libraries using the
+BiblioCommons system, then running this software locally should work for you.
+It relies on undocumented APIs, so your mileage may vary.
 
-You can use just the [Python backend][bibliophile-backend] locally.
+You can also use just the [Python backend][bibliophile-backend] locally.
 
 # How does this work?
-- The `bibliophile` Python package does the legwork of querying Goodreads &
-  BiblioCommons (respectively, these are the services needed to find which
-  books I'm interested in, and which books are available at the library).
-- The Python module is deployed as a serverless function on AWS Lambda.
-    - The function is configured with an API Gateway to enable a REST API.
+- The [`bibliophile` Python package][bibliophile-backend] does the legwork of
+  querying Goodreads & BiblioCommons (respectively, these are the services
+  needed to find which books I'm interested in, and which books are available
+  at the library).
+- This repository defines some Lambda functions that are deployed to public
+  endpoints, accessible at api.dcain.me
+    - Function are configured with an API Gateway to enable a REST API.
     - `serverless` provides automated deployment & configuration on AWS.
-- A web app provides the user interface on [biblio.dcain.me][biblio].
+- A [web app][bibliophile-frontend] provides the user interface on [biblio.dcain.me][biblio].
 
-## Deployment overview
-This repository contains two projects, which may be deployed separately (or together)
 
-### Lambda functions (Python-powered backend)
+## Deploying AWS Lambda functions
 1. [Download Docker][docker].
    We choose to Dockerize the pip environment because both `grequests` and
    `lxml` (dependencies of `bibliophile`) are C-based, and need to compile
@@ -58,10 +58,6 @@ This repository contains two projects, which may be deployed separately (or toge
    npm run deploy
    ```
 
-Configuration for `serverless deploy` is contained in `serverless.yml`.
-If you want to deploy this service to your own domain, you'll need to
-tweak settings in there (namely, changing domain names).
-
 Once the above is done, a simple end-to-end test:
 
 ```
@@ -70,8 +66,15 @@ curl -X POST 'https://api.dcain.me/bibliophile/read_shelf' \
     --data '{"userId": "41926065", "shelf": "to-read"}'
 ```
 
+### Customization
+Configuration for `serverless deploy` is contained in `serverless.yml`.
+If you want to deploy this service to your own domain, you'll need to
+tweak settings in there (namely, changing domain names).
+
+
 
 [bibliophile-backend]: https://github.com/DavidCain/bibliophile-backend
+[bibliophile-frontend]: https://github.com/DavidCain/bibliophile-frontend
 [docker]: https://www.docker.com/products/docker-desktop
 [reading-list-img]: screenshots/reading_list.png
 [biblio]: https://biblio.dcain.me
