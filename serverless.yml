@@ -68,6 +68,44 @@ functions:
           # We need to allow cross-origin requests for POSTs.
           cors: true
 
+resources:
+  Resources:
+    # The below YAML is just CloudFormation syntax
+    # Read more: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-guide.html
+    shelvedBooksTable:
+      # Reference: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: shelvedBooks
+
+        # This table should be relatively rarely used.
+        # Instead of paying to provision, just pay by the request.
+        BillingMode: PAY_PER_REQUEST
+
+        AttributeDefinitions:
+          - AttributeName: userAndShelf
+            AttributeType: S
+
+        KeySchema:
+          - AttributeName: userAndShelf
+            KeyType: HASH
+
+        # The Goodreads API specifically requests that (most) data not be stored more than 24 hours.
+        # Because this tool is meant to store data from my own account, I could *probably* cache indefinitely.
+        # However, err on the side of caution.
+        #
+        # From https://www.goodreads.com/api/terms
+        #
+        # > You may store information obtained from the Goodreads API for up to
+        # # 24 hours. Goodreads needs the ability to modify, remove, and update
+        # > the order of our data, which caching would prevent. An exception to
+        # > this rule is if the data is from your own account or the
+        # > OAuth-authenticated users account, in which case the data may be
+        # > stored permanently.
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
 plugins:
   # This plugin allows us to include Python dependencies in the lambda function
   # See `pythonRequirements`
