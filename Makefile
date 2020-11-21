@@ -46,8 +46,8 @@ check: lint test
 # (might fix a broken `make check`)
 .PHONY: fix
 fix: install-python-dev install-js
-	black lambda_functions
-	isort lambda_functions
+	poetry run black lambda_functions
+	poetry run isort lambda_functions
 	@# The default `log` level will output the filename of every checked file
 	npx prettier --loglevel warn --write .
 
@@ -59,11 +59,11 @@ typecheck: install-python-dev
 
 .PHONY: lint
 lint: install-python-dev install-js
-	black --fast --check lambda_functions
-	isort --check lambda_functions
+	poetry run black --fast --check lambda_functions
+	poetry run isort --check lambda_functions
 	npx prettier --check .
 	@# '0' tells pylint to auto-detect available processors
-	pylint --jobs 0 lambda_functions
+	poetry run pylint --jobs 0 lambda_functions
 
 .PHONY: test
 test: install-python-dev
