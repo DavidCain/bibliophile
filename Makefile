@@ -18,7 +18,7 @@ check-poetry:
 install-js: $(npm_bootstrap_file)
 $(npm_bootstrap_file): package.json package-lock.json
 	touch $(npm_bootstrap_file).notyet
-	npm install
+	npm ci
 	mv $(npm_bootstrap_file).notyet $(npm_bootstrap_file)
 
 .PHONY: install-python-dev
