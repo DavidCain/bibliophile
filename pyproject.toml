@@ -55,5 +55,5 @@ pytest = "*"
 # Error message: "markers 'platform_python_implementation == "CPython" and sys_platform == "win32"' don't match your environment"
 # Command which serverless uses to generate a `requirements.txt`:
 # `poetry export --without-hashes -f requirements.txt -o requirements.txt --with-credentials`
-requires = ["poetry>=1.0.0"]
+requires = ["poetry>=1.1.1"]
 build-backend = "poetry.masonry.api"

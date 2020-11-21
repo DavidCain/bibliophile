@@ -1,0 +1,27 @@
+name: CI
+
+on: [push]
+
+jobs:
+  # NOTE: If we wanted to, we could split this out into two jobs:
+  # 1: Python job that lints & checks the Python source
+  # 2: JS job that runs Prettier, handles any serverless setup
+  #
+  # However, `check` is fast enough in one large step.
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.6"
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.1
+        with:
+          version: 1.1.4
+          virtualenvs-create: true
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "14"
+      - name: Full check
+        run: make check
