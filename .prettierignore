@@ -3,3 +3,5 @@
 /.serverless
 /htmlcov
 /LICENSE.md
+# For users who let Poetry manage their packages, `site-packages` will have JSON files
+/.venv

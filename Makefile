@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := all
 
+# NOTE: This filename is also referenced in the GitHub action.
 poetry_dev_bootstrap_file = .poetry_dev_up_to_date
 poetry_prod_bootstrap_file = .poetry_prod_up_to_date
 npm_bootstrap_file = .node_packages_up_to_date
