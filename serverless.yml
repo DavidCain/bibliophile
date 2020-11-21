@@ -12,7 +12,6 @@ provider:
   apiGateway:
     shouldStartNameWithService: true
 
-
 package:
   exclude:
     # Exclude everything by default
@@ -35,11 +34,11 @@ custom:
     usePoetry: true
 
   customDomain:
-    domainName: 'api.dcain.me'
-    certificateName: 'dcain.me'
+    domainName: "api.dcain.me"
+    certificateName: "dcain.me"
     # All functions deployed to the domain name will be prefixed with this path.
     # (For example, we'll have a function at https://api.dcain.me/bibliophile/read_shelf)
-    basePath: 'bibliophile'
+    basePath: "bibliophile"
     stage: ${self:provider.stage}
     createRoute53Record: true
 

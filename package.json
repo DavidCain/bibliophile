@@ -10,12 +10,12 @@
     "type": "git",
     "url": "https://github.com/DavidCain/bibliophile.git"
   },
-  "dependencies": {},
   "devDependencies": {
+    "merge": "^2.1.0",
+    "prettier": "^2.2.0",
     "serverless": "^2.11.1",
     "serverless-domain-manager": "^5.1.0",
-    "serverless-python-requirements": "^5.1.0",
-    "merge": "^2.1.0"
+    "serverless-python-requirements": "^5.1.0"
   },
   "scripts": {
     "serverless": "serverless",
