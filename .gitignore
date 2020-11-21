@@ -4,3 +4,7 @@
 /.serverless
 /.coverage
 /node_modules
+
+# These files are produced by coverage with `coverage html` and `coverage xml`
+/htmlcov
+/coverage.xml
