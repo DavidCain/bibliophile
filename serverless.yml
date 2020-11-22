@@ -42,6 +42,10 @@ custom:
     stage: ${self:provider.stage}
     createRoute53Record: true
 
+  dynamodb:
+    stages:
+      - ${self:provider.stage}
+
 functions:
   readShelf:
     handler: lambda_functions.read_shelf.handler
@@ -114,3 +118,4 @@ plugins:
   # (We can invoke `api.dcain.me/<RouteName>` directly)
   # See `customDomain`
   - serverless-domain-manager
+  - serverless-dynamodb-local

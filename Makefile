@@ -10,6 +10,14 @@ npm_bootstrap_file = .node_packages_up_to_date
 .PHONY: all
 all: install-python-dev install-js
 
+# Run a DynamoDB instance locally so that endpoints can use it.
+# NOTE: Depends on Java
+# TODO: Also consider using `serverless-offline`
+.PHONY: run
+run: install-js
+	npx serverless dynamodb start --migrate
+
+
 .PHONY: check-poetry
 check-poetry:
 	@which poetry > /dev/null || (echo "Poetry not found - see https://python-poetry.org/docs/#installation" && exit 1)

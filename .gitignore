@@ -3,6 +3,7 @@
 /.node_packages_up_to_date
 /.serverless
 /.coverage
+/.dynamodb
 /node_modules
 
 # These files are produced by coverage with `coverage html` and `coverage xml`
