@@ -7,6 +7,30 @@ provider:
   runtime: python3.6
   stage: dev
   region: us-west-1
+
+  # The `readShelf` function will read and write from the `shelvedBooks` table
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:Scan"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        {
+          "Fn::Join":
+            [
+              ":",
+              [
+                "arn:aws:dynamodb:us-west-1",
+                { Ref: "AWS::AccountId" },
+                "table/shelvedBooks",
+              ],
+            ],
+        }
+
   # Opt in to version 3 behavior eagerly
   # https://www.serverless.com/framework/docs/deprecations/#AWS_API_GATEWAY_NAME_STARTING_WITH_SERVICE
   apiGateway:

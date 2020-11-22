@@ -83,11 +83,6 @@ This is a pet project I work on whenever I'm so inclined.
 
 Accordingly, there are a lot of TODOs at any given moment...
 
-## Cache shelf contents
-
-The Goodreads API can be quite slow. They allow caching results for up to 24 hours,
-so we can use that to make the initial shelf reading faster for repeat users.
-
 ## Support shelves with over 200 books
 
 Right now, this tool only reads the first 200 books on the `to-read` shelf
