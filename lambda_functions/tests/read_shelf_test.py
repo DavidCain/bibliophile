@@ -5,8 +5,9 @@
 import bibliophile  # isort: skip, pylint: disable=unused-import
 
 import json
+import time
 import unittest
-from typing import List
+from typing import Any, Dict, List, Optional
 from unittest import mock
 
 import boto3
@@ -20,6 +21,8 @@ from bibliophile.goodreads.types import Book
 from ..read_shelf import handler
 
 dummy_context = LambdaContext()
+
+JsonDict = Dict[str, Any]
 
 
 class HandlerTest(unittest.TestCase):
@@ -88,20 +91,36 @@ class CachingTest(unittest.TestCase):
         ),
     ]
 
-    success_response = {
-        'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Credentials': True,
-        },
-        'body': (
-            '{"books": ['
-            '{"goodreads_id": "135479", "isbn": "0140285601", "title": "Cat\'s Cradle", "author": "Kurt Vonnegut Jr."}, '
-            '{"goodreads_id": "3836", "isbn": "0142437239", "title": "Don Quixote", "author": "Miguel de Cervantes"}'
-            ']}'
-        ),
-    }
+    @staticmethod
+    def success_response(is_cached: bool, cached_ts: Optional[int] = None) -> JsonDict:
+        """ Return what we'd expect as a response dictionary from a successful call. """
+        body: JsonDict = {
+            'isReadFromCache': is_cached,
+            'cachedTimestamp': cached_ts,
+            'books': [
+                {
+                    'goodreads_id': "135479",
+                    'isbn': '0140285601',
+                    'title': "Cat's Cradle",
+                    'author': 'Kurt Vonnegut Jr.',
+                },
+                {
+                    'goodreads_id': "3836",
+                    'isbn': "0142437239",
+                    'title': "Don Quixote",
+                    'author': "Miguel de Cervantes",
+                },
+            ],
+        }
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Credentials': True,
+            },
+            'body': json.dumps(body),
+        }
 
     def setUp(self):
         dynamodb = boto3.resource('dynamodb')
@@ -182,7 +201,7 @@ class CachingTest(unittest.TestCase):
         ShelfReader.assert_called_once_with('12345', 'fake-key')
         self.fake_reader.wanted_books.assert_called_once_with('custom-to-read')
 
-        self.assertEqual(response, self.success_response)
+        self.assertEqual(response, self.success_response(is_cached=False))
 
     def test_cache_miss_then_hit(self):
         """ When there's a cache miss, we query the shelf & store results. """
@@ -193,14 +212,18 @@ class CachingTest(unittest.TestCase):
             with mock.patch.object(goodreads, 'ShelfReader') as ShelfReader:
                 ShelfReader.return_value = self.fake_reader
 
-                response = handler(
-                    {'body': json.dumps(okay_payload)}, context=dummy_context
-                )
+                # Record the time at which this call was made
+                # (this will be important later when reading from the cache!!)
+                with mock.patch.object(time, 'time') as get_time:
+                    get_time.return_value = 1606088676.82907
+                    response = handler(
+                        {'body': json.dumps(okay_payload)}, context=dummy_context
+                    )
 
         # The first call was a cache miss - we hit the API endpoint
         ShelfReader.assert_called_once_with('12345', 'fake-key')
         self.fake_reader.wanted_books.assert_called_once_with('custom-to-read')
-        self.assertEqual(response, self.success_response)
+        self.assertEqual(response, self.success_response(is_cached=False))
 
         self.fake_reader.reset_mock()
 
@@ -210,7 +233,10 @@ class CachingTest(unittest.TestCase):
             response2 = handler(
                 {'body': json.dumps(okay_payload)}, context=dummy_context
             )
-        self.assertEqual(response2, self.success_response)
+
+        self.assertEqual(
+            response2, self.success_response(is_cached=True, cached_ts=1606088676)
+        )
 
         # We don't need to initialize a reader, nor request books
         ShelfReader.assert_not_called()
@@ -237,7 +263,7 @@ class CachingTest(unittest.TestCase):
         # We hit the API endpoint to get results
         ShelfReader.assert_called_once_with('12345', 'fake-key')
         self.fake_reader.wanted_books.assert_called_once_with('custom-to-read')
-        self.assertEqual(response, self.success_response)
+        self.assertEqual(response, self.success_response(is_cached=False))
 
         # We recorded a result directly to the cache
         cached = self.table.get_item(Key={'userAndShelf': '12345-custom-to-read'})
@@ -256,7 +282,7 @@ class CachingTest(unittest.TestCase):
                 response2 = handler(
                     {'body': json.dumps(bypass_payload)}, context=dummy_context
                 )
-        self.assertEqual(response2, self.success_response)
+            self.assertEqual(response2, self.success_response(is_cached=False))
 
         # We made a fresh call to get results
         self.fake_reader.wanted_books.assert_called_once_with('custom-to-read')

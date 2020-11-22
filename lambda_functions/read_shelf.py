@@ -11,8 +11,9 @@ import bibliophile  # isort: skip, pylint: disable=unused-import
 import json
 import os
 import time
+import typing
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 import boto3
 from aws_lambda_context import LambdaContext
@@ -27,7 +28,39 @@ JsonDict = Dict[str, Any]
 GOODREADS_CACHE_DURATION = int(timedelta(hours=24).total_seconds())
 
 
-def get_wanted_books(user_id: str, shelf: str, skip_cache: bool = False) -> List[Book]:
+# Make a generic type for use in annotating classmethod factory for mypy
+T = TypeVar('T', bound='ShelfResult')  # pylint: disable=invalid-name
+
+
+class ShelfResult(typing.NamedTuple):
+    """ Wrap the results of a "read shelf" operation to indicate cache hit/miss. """
+
+    books: List[Book]
+
+    # If null, these results were freshly obtained.
+    # Otherwise, the timestamp at which we last read the shelf for the user
+    retrieved_timestamp: Optional[int]
+
+    @property
+    def is_cached(self) -> bool:
+        """ Did this result get read from the cache? """
+        return self.retrieved_timestamp is not None
+
+    # NOTE: In Python 3.8 we can use `postponed evaluations of annotations`
+    # to just have this method return ShelfResult
+    @classmethod
+    def from_cached_item(cls: Type[T], item: JsonDict) -> T:
+        """ Build a result from a cached value in DynamoDB. """
+        return cls(
+            # Note that this constructor relies on Book having primitive types...
+            # (If Book had other NamedTuples for instance, this would not work)
+            books=[Book(**bk_dict) for bk_dict in item['books']],
+            # Coerce this timestamp to an int, since it comes back as a Decimal
+            retrieved_timestamp=int(item['retrievedTimestamp']),
+        )
+
+
+def get_wanted_books(user_id: str, shelf: str, skip_cache: bool = False) -> ShelfResult:
     """Get books on the user's shelf, using cache if available.
 
     Reading from a user's Goodreads shelf is an expensive operation.
@@ -53,14 +86,7 @@ def get_wanted_books(user_id: str, shelf: str, skip_cache: bool = False) -> List
     if not skip_cache:
         cache = table.get_item(Key=pk_dict)
         if 'Item' in cache:  # Hit!
-            item = cache['Item']
-            # Note that this constructor relies on Book having primitive types...
-            # (If Book had other NamedTuples for instance, this would not work)
-            return [Book(**bk_dict) for bk_dict in item['books']]
-
-    # TODO: We need a better way to control this caching behavior
-    # Ideally, if the results are, say, more than an hour old we'd use them,
-    # but also trigger an asynchronous refreshing.
+            return ShelfResult.from_cached_item(cache['Item'])
 
     # If the cache missed, then fetch the shelf now (should take ~5s)
     # (Raises ValueError on key missing)
@@ -83,7 +109,7 @@ def get_wanted_books(user_id: str, shelf: str, skip_cache: bool = False) -> List
         }
     )
 
-    return wanted_books
+    return ShelfResult(books=wanted_books, retrieved_timestamp=None)
 
 
 def error(message: str) -> JsonDict:
@@ -117,9 +143,9 @@ def handler(
     skip_cache: bool = body.get('skipCache', False)
 
     try:
-        wanted_books = get_wanted_books(user_id, shelf, skip_cache=skip_cache)
+        result = get_wanted_books(user_id, shelf, skip_cache=skip_cache)
     except ValueError:
-        return error("Something went wrong.")
+        return error("Something went wrong.")  # Most likely bad dev key in env
 
     return {
         'statusCode': 200,
@@ -140,6 +166,8 @@ def handler(
         },
         'body': json.dumps(
             {
+                'isReadFromCache': result.is_cached,
+                'cachedTimestamp': result.retrieved_timestamp,
                 'books': [
                     {
                         'goodreads_id': book.goodreads_id,
@@ -150,8 +178,8 @@ def handler(
                         # However, we avoid reporting that information since the description
                         # may come from Goodreads themselves, and we never hotlink images.
                     }
-                    for book in wanted_books
-                ]
+                    for book in result.books
+                ],
             }
         ),
     }
