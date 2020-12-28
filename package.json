@@ -12,8 +12,8 @@
   },
   "devDependencies": {
     "merge": "^2.1.0",
-    "prettier": "^2.2.0",
-    "serverless": "^2.11.1",
+    "prettier": "^2.2.1",
+    "serverless": "^2.16.1",
     "serverless-domain-manager": "^5.1.0",
     "serverless-dynamodb-local": "github:99x/serverless-dynamodb-local#v1",
     "serverless-python-requirements": "^5.1.0"
